@@ -1,50 +1,106 @@
-# Welcome to your Expo app 👋
+# 🎉 PARTY LED
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile digital signboard app that turns your phone into a scrolling LED-style marquee. Type a message, pick your colors, hit play, and your device becomes a bold, eye-catching sign — perfect for parties, events, concerts, and anywhere you want to grab attention.
 
-## Get started
+Built with **React Native** and **Expo**.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## ✨ Features
 
-2. Start the app
+- **Scrolling marquee text** — smooth, infinitely looping horizontal scroll powered by `react-native-reanimated`
+- **Custom message** — type any text you want displayed on the signboard
+- **Background color picker** — choose from 16 preset colors (blacks, reds, greens, blues, purples, white)
+- **Text color picker** — independently set the text color with the same palette
+- **Adjustable text size** — scale from 70 px up to 120 px in 2 px increments
+- **Adjustable scroll speed** — control marquee speed from 10 to 200 pixels/second
+- **Fullscreen landscape mode** — tapping PLAY locks the device to landscape and fills the screen with your scrolling message; tap anywhere to exit back to the editor
+- **Cross-platform** — runs on Android, iOS, and web
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 🛠 Tech Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Layer | Technology |
+|---|---|
+| Framework | [Expo](https://expo.dev) (SDK 54) |
+| Language | TypeScript |
+| Navigation | [Expo Router](https://docs.expo.dev/router/introduction/) (file-based routing) |
+| Animations | [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) |
+| Orientation | [expo-screen-orientation](https://docs.expo.dev/versions/latest/sdk/screen-orientation/) |
+| UI | React Native core components + custom themed components |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## 📁 Project Structure
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+├── app/
+│   ├── _layout.tsx          # Root layout — sets default portrait orientation
+│   ├── index.tsx            # Entry redirect → /signboard
+│   ├── signboard.tsx        # ★ Main signboard screen (editor + marquee)
+│   └── (tabs)/
+│       ├── _layout.tsx      # Tab navigator layout
+│       ├── index.tsx        # Home tab (starter welcome page)
+│       └── explore.tsx      # Explore tab (documentation examples)
+├── components/              # Reusable UI components (themed text/view, parallax scroll, etc.)
+├── constants/
+│   └── theme.ts             # Color tokens and platform-aware font definitions
+├── hooks/                   # Custom hooks (color scheme, theme color)
+├── assets/
+│   └── images/
+│       └── led.png          # App icon
+├── app.json                 # Expo project configuration
+├── babel.config.js          # Babel config (reanimated plugin)
+├── package.json             # Dependencies and scripts
+└── tsconfig.json            # TypeScript configuration
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 🚀 Getting Started
 
-To learn more about developing your project with Expo, look at the following resources:
+### Prerequisites
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [Expo CLI](https://docs.expo.dev/get-started/installation/) — included via npx, no global install needed
+- A physical device with [Expo Go](https://expo.dev/go) **or** an Android/iOS emulator
 
-## Join the community
+### Install & Run
 
-Join our community of developers creating universal apps.
+```bash
+# Clone the repo
+git clone https://github.com/KAVD-CORP/PARTYLED.git
+cd PARTYLED
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Install dependencies
+npm install
+
+# Start the Expo dev server
+npx expo start
+```
+
+Then scan the QR code with Expo Go (Android) or the Camera app (iOS), or press:
+
+- `a` — open on Android emulator
+- `i` — open on iOS simulator
+- `w` — open in web browser
+
+---
+
+## 📱 Usage
+
+1. Launch the app — you land on the **signboard editor**
+2. Type your message in the text field
+3. Pick a **background color** and a **text color** from the swatches
+4. Adjust the **text size** and **scroll speed** with the +/- buttons
+5. Tap **PLAY** — the screen locks to landscape and your message scrolls across in fullscreen
+6. Tap anywhere on the marquee to **stop** and return to the editor
+
+---
+
+## 📜 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+© 2026 KAVD CORP
