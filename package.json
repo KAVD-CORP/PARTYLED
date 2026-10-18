@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "npm --prefix server test",
-    "build:web": "expo export --platform web"
+    "build:web": "expo export --platform web",
+    "serve": "npm run build:web && node server/index.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

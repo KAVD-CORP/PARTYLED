@@ -28,7 +28,11 @@ npm --prefix server install
 node server/index.js       # serves dist/ + WebSocket on http://localhost:3001
 ```
 
-Open http://localhost:3001. For live-reload development, run `npx expo start --web` alongside the server (the web app on :8081 talks to the server on :3001).
+Open http://localhost:3001.
+
+**Important:** `localhost:3001` serves the last `npm run build:web` output. After UI changes, run `npm run build:web` again (or `npm run serve` to rebuild and start the server), then hard-refresh the browser.
+
+For live-reload while editing, run `npx expo start --web` (port 8081) alongside the server (the web app on :8081 talks to the server on :3001).
 
 ### Test with phones on your Wi-Fi
 

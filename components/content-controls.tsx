@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SWATCHES, UI } from '../constants/party';
+import { ColorField } from './color-field';
+import { UI } from '../constants/party';
 import { DISPLAY_EFFECTS, RoomState } from '../types/session';
 
 interface ContentControlsProps {
@@ -13,16 +14,6 @@ export function Section({ title, children }: { title: string; children: React.Re
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {children}
-    </View>
-  );
-}
-
-function Swatches({ value, onChange }: { value: string; onChange: (c: string) => void }) {
-  return (
-    <View style={styles.swatches}>
-      {SWATCHES.map((c) => (
-        <TouchableOpacity key={c} onPress={() => onChange(c)} style={[styles.swatch, { backgroundColor: c }, value === c && styles.swatchActive]} />
-      ))}
     </View>
   );
 }
@@ -75,13 +66,13 @@ export function ContentControls({ state, onChange, accent }: ContentControlsProp
         {state.effect !== 'chase' && (
           <>
             <Text style={styles.fieldLabel}>Background</Text>
-            <Swatches value={state.bgColor} onChange={(bgColor) => onChange({ bgColor })} />
+            <ColorField value={state.bgColor} onChange={(bgColor) => onChange({ bgColor })} />
           </>
         )}
         {usesTextColor && (
           <>
             <Text style={styles.fieldLabel}>Text color</Text>
-            <Swatches value={state.textColor} onChange={(textColor) => onChange({ textColor })} />
+            <ColorField value={state.textColor} onChange={(textColor) => onChange({ textColor })} />
           </>
         )}
         <View style={styles.steppers}>
@@ -105,9 +96,6 @@ const styles = StyleSheet.create({
   chip: { borderWidth: 1, borderColor: UI.cardBorder, backgroundColor: UI.card, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipTxt: { color: UI.text, fontWeight: '700', fontSize: 13 },
   fieldLabel: { color: UI.text, fontWeight: '700', fontSize: 13 },
-  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  swatch: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: 'rgba(255,255,255,0.15)' },
-  swatchActive: { borderColor: UI.text, transform: [{ scale: 1.12 }] },
   steppers: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   stepper: { flexGrow: 1, flexBasis: 120, backgroundColor: UI.card, borderRadius: 12, padding: 10, alignItems: 'center', gap: 6, borderWidth: 1, borderColor: UI.cardBorder },
   stepLabel: { color: UI.muted, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
