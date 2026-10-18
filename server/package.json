@@ -1,0 +1,16 @@
+{
+  "name": "partyled-server",
+  "version": "1.0.0",
+  "description": "PARTY LED WebSocket server for QR code sessions",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "uuid": "^10.0.0",
+    "ws": "^8.18.0"
+  }
+}

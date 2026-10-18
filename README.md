@@ -1,106 +1,66 @@
-# 🎉 PARTY LED
+# Party LED
 
-A mobile digital signboard app that turns your phone into a scrolling LED-style marquee. Type a message, pick your colors, hit play, and your device becomes a bold, eye-catching sign — perfect for parties, events, concerts, and anywhere you want to grab attention.
+Turn phones into LED signs. Use one phone on its own, or host a show where every phone that scans your QR code displays what you choose — either the same thing on every screen (**Broadcast**) or one tile of a giant billboard (**Swarm**).
 
-Built with **React Native** and **Expo**.
+Guests don't need to install anything: the QR code opens the web app in the phone's browser, or the native app if it's installed (once app links are configured).
 
----
+| Home | Solo (LED pixels) | Host QR | Swarm grid |
+| --- | --- | --- | --- |
+| ![Home](docs/screenshots/home.png) | ![Solo](docs/screenshots/solo-pixel.png) | ![Host QR](docs/screenshots/host-qr.png) | ![Swarm grid](docs/screenshots/host-swarm-grid.png) |
 
-## ✨ Features
+## Features
 
-- **Scrolling marquee text** — smooth, infinitely looping horizontal scroll powered by `react-native-reanimated`
-- **Custom message** — type any text you want displayed on the signboard
-- **Background color picker** — choose from 16 preset colors (blacks, reds, greens, blues, purples, white)
-- **Text color picker** — independently set the text color with the same palette
-- **Adjustable text size** — scale from 70 px up to 120 px in 2 px increments
-- **Adjustable scroll speed** — control marquee speed from 10 to 200 pixels/second
-- **Fullscreen landscape mode** — tapping PLAY locks the device to landscape and fills the screen with your scrolling message; tap anywhere to exit back to the editor
-- **Cross-platform** — runs on Android, iOS, and web
+- **Solo sign** — offline, only this phone. Settings are remembered; fullscreen locks to landscape.
+- **Host a show** — QR code + room code, live preview, Blackout and Start/Stop.
+- **Broadcast mode** — every phone shows the same content.
+- **Swarm billboard** — phones fill a columns × rows grid in join order; tap cells to move or swap phones. Animations are synced to the server clock.
+- **Effects** — Scroll, Still, LED pixels, Rainbow, Neon, Pulse, Glitch, Strobe, Crowd wave, Color chase. Text or image URL, colors, size, speed, brightness.
+- Guests reconnect automatically after a dropped connection or page reload.
 
----
+## Run locally
 
-## 🛠 Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Framework | [Expo](https://expo.dev) (SDK 54) |
-| Language | TypeScript |
-| Navigation | [Expo Router](https://docs.expo.dev/router/introduction/) (file-based routing) |
-| Animations | [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) |
-| Orientation | [expo-screen-orientation](https://docs.expo.dev/versions/latest/sdk/screen-orientation/) |
-| UI | React Native core components + custom themed components |
-
----
-
-## 📁 Project Structure
-
-```
-├── app/
-│   ├── _layout.tsx          # Root layout — sets default portrait orientation
-│   ├── index.tsx            # Entry redirect → /signboard
-│   ├── signboard.tsx        # ★ Main signboard screen (editor + marquee)
-│   └── (tabs)/
-│       ├── _layout.tsx      # Tab navigator layout
-│       ├── index.tsx        # Home tab (starter welcome page)
-│       └── explore.tsx      # Explore tab (documentation examples)
-├── components/              # Reusable UI components (themed text/view, parallax scroll, etc.)
-├── constants/
-│   └── theme.ts             # Color tokens and platform-aware font definitions
-├── hooks/                   # Custom hooks (color scheme, theme color)
-├── assets/
-│   └── images/
-│       └── led.png          # App icon
-├── app.json                 # Expo project configuration
-├── babel.config.js          # Babel config (reanimated plugin)
-├── package.json             # Dependencies and scripts
-└── tsconfig.json            # TypeScript configuration
-```
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18+ recommended)
-- [Expo CLI](https://docs.expo.dev/get-started/installation/) — included via npx, no global install needed
-- A physical device with [Expo Go](https://expo.dev/go) **or** an Android/iOS emulator
-
-### Install & Run
+Requires Node 18+.
 
 ```bash
-# Clone the repo
-git clone https://github.com/KAVD-CORP/PARTYLED.git
-cd PARTYLED
-
-# Install dependencies
 npm install
-
-# Start the Expo dev server
-npx expo start
+npm run build:web          # static web export to dist/
+npm --prefix server install
+node server/index.js       # serves dist/ + WebSocket on http://localhost:3001
 ```
 
-Then scan the QR code with Expo Go (Android) or the Camera app (iOS), or press:
+Open http://localhost:3001. For live-reload development, run `npx expo start --web` alongside the server (the web app on :8081 talks to the server on :3001).
 
-- `a` — open on Android emulator
-- `i` — open on iOS simulator
-- `w` — open in web browser
+### Test with phones on your Wi-Fi
 
----
+`localhost` QR codes only work on the computer itself. Start the server with your computer's LAN address so the QR points somewhere phones can reach:
 
-## 📱 Usage
+```powershell
+$env:PUBLIC_ORIGIN="http://192.168.1.50:3001"; node server/index.js
+```
 
-1. Launch the app — you land on the **signboard editor**
-2. Type your message in the text field
-3. Pick a **background color** and a **text color** from the swatches
-4. Adjust the **text size** and **scroll speed** with the +/- buttons
-5. Tap **PLAY** — the screen locks to landscape and your message scrolls across in fullscreen
-6. Tap anywhere on the marquee to **stop** and return to the editor
+Phones and computer must be on the same network. Camera/fullscreen features may require HTTPS on some browsers — see deployment.
 
----
+## How to use
 
-## 📜 License
+1. **Host:** tap *Host a show*. Show the QR code to your guests.
+2. **Guests:** scan the QR (or open *Join a show* and type the room code), then tap to start.
+3. **Host:** choose *Broadcast* or *Swarm billboard*, set the message and effect, then press **Start**. Use **Blackout** to darken every screen instantly.
+4. In Swarm mode, set the grid to match how people are standing (row 1 is closest to the stage) and tap cells to rearrange phones.
 
-This project is licensed under the [MIT License](LICENSE).
+## Checks
 
-© 2026 KAVD CORP
+```bash
+npx tsc --noEmit
+npx expo lint
+npm test                   # server protocol tests
+```
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md). Before going live, replace these placeholders:
+
+- `YOUR_DOMAIN.example` — production domain (`app.json`, server `.well-known` files)
+- `APPLE_TEAM_ID` — iOS universal links
+- `ANDROID_RELEASE_SHA256` — Android app links
+
+Environment variables: `PUBLIC_ORIGIN` (server, the URL encoded in QR codes), `PORT` (server, default 3001), `EXPO_PUBLIC_SERVER_URL` (native app builds).

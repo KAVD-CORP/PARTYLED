@@ -11,7 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "requireFullScreen": true,
-      "bundleIdentifier": "com.yourname.digitalsignboard"
+      "bundleIdentifier": "com.yourname.digitalsignboard",
+      "associatedDomains": ["applinks:YOUR_DOMAIN.example"]
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +20,13 @@
       },
       "package": "com.yourname.digitalsignboard",
       "permissions": [],
-      "softwareKeyboardLayoutMode": "pan"
+      "softwareKeyboardLayoutMode": "pan",
+      "intentFilters": [{
+        "action": "VIEW",
+        "autoVerify": true,
+        "data": [{ "scheme": "https", "host": "YOUR_DOMAIN.example", "pathPrefix": "/join" }],
+        "category": ["BROWSABLE", "DEFAULT"]
+      }]
     },
     "web": {},
     "platforms": ["ios", "android", "web"],

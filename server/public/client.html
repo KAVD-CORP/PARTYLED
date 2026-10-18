@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PARTY LED — Connected Display</title>
+  <meta name="theme-color" content="#000000">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000000;
+      color: #ffffff;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* ─── Top Floating App Bar ─── */
+    .top-bar {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background: rgba(20, 20, 25, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .top-bar.hidden {
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
+    }
+
+    .brand-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00ff66;
+      box-shadow: 0 0 10px #00ff66;
+      animation: pulse 1.5s infinite;
+    }
+
+    .live-dot.connecting {
+      background: #ffaa00;
+      box-shadow: 0 0 10px #ffaa00;
+    }
+
+    .live-dot.disconnected {
+      background: #ff3344;
+      box-shadow: 0 0 10px #ff3344;
+    }
+
+    .room-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: #00e5ff;
+    }
+
+    .bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-btn {
+      background: linear-gradient(135deg, #ff0077, #7928ca);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 999px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 0 12px rgba(255, 0, 119, 0.4);
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    /* ─── Mode 1: Marquee Display ─── */
+    .viewport {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #000000;
+      transition: background-color 0.2s ease;
+    }
+
+    .marquee-track {
+      display: flex;
+      white-space: nowrap;
+      position: absolute;
+      will-change: transform;
+    }
+
+    .marquee-text {
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      line-height: 1.2;
+      padding: 0 20px;
+    }
+
+    /* ─── Mode 2: Swarm Billboard Viewport ─── */
+    .swarm-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .swarm-canvas {
+      position: absolute;
+      will-change: transform;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .swarm-tile-indicator {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 99;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: opacity 0.3s;
+    }
+
+    .tile-badge {
+      background: #ff0077;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ─── Standby / Waiting Screen ─── */
+    .waiting-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      background: radial-gradient(circle at center, #1b1b24 0%, #0a0a0f 100%);
+      z-index: 50;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .waiting-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .glowing-circle {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255, 0, 119, 0.2), rgba(0, 229, 255, 0.2));
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      position: relative;
+      box-shadow: 0 0 40px rgba(0, 229, 255, 0.25);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .glowing-circle span {
+      font-size: 44px;
+    }
+
+    .waiting-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .waiting-subtitle {
+      font-size: 14px;
+      color: #8b8b9e;
+      max-width: 280px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .swarm-details {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 20px;
+      text-align: left;
+    }
+
+    .detail-item h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #71717a;
+      margin-bottom: 4px;
+    }
+
+    .detail-item p {
+      font-size: 16px;
+      font-weight: 800;
+      color: #00e5ff;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .fullscreen-prompt-btn {
+      background: linear-gradient(135deg, #00e5ff, #0077ff);
+      color: #000;
+      border: none;
+      font-weight: 800;
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .fullscreen-prompt-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* ─── Grid Pos Picker Modal ─── */
+    .pos-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s;
+    }
+
+    .pos-modal.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .pos-card {
+      background: #14141c;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+    }
+
+    .pos-grid {
+      display: grid;
+      gap: 8px;
+      margin: 20px 0;
+    }
+
+    .pos-tile {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 14px 0;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .pos-tile.selected {
+      background: #ff0077;
+      border-color: #ff4d9e;
+      box-shadow: 0 0 15px rgba(255, 0, 119, 0.5);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Floating App Bar -->
+  <header class="top-bar" id="topBar">
+    <div class="brand-badge">
+      <div class="live-dot connecting" id="statusDot"></div>
+      <span>PARTY LED</span>
+      <span class="room-badge" id="roomCodeText">------</span>
+    </div>
+    <div class="bar-actions">
+      <a href="#" id="openInAppBtn" class="app-btn">
+        <span>⚡ App</span>
+      </a>
+      <button class="icon-btn" id="fsToggleBtn" title="Fullscreen">⛶</button>
+    </div>
+  </header>
+
+  <!-- Mode 1: Synchronized Display Control Viewport -->
+  <main class="viewport" id="viewport">
+    <div class="marquee-track" id="marqueeTrack">
+      <div class="marquee-text" id="marqueeText">PARTY LED</div>
+    </div>
+  </main>
+
+  <!-- Mode 2: Swarm Billboard Viewport -->
+  <div class="swarm-container" id="swarmContainer" style="display: none;">
+    <div class="swarm-canvas" id="swarmCanvas">
+      <div class="marquee-text" id="swarmText">SWARM BILBOARD</div>
+    </div>
+    <div class="swarm-tile-indicator" id="swarmTileIndicator" onclick="openPosPicker()">
+      <span>TILE:</span>
+      <span class="tile-badge" id="tileBadge">1 of 6</span>
+      <span style="font-size: 10px; color: #aaa;">(Tap to change)</span>
+    </div>
+  </div>
+
+  <!-- Standby / Waiting Screen -->
+  <div class="waiting-screen" id="waitingScreen">
+    <div class="glowing-circle">
+      <span id="circleEmoji">🎉</span>
+    </div>
+    <h1 class="waiting-title" id="waitingTitle">Connected to Host</h1>
+    <p class="waiting-subtitle" id="waitingSub">Waiting for host to start the signboard...</p>
+
+    <div class="swarm-details" id="swarmStats" style="display: none;">
+      <div class="detail-item">
+        <h4>Swarm Role</h4>
+        <p id="statTile">Tile #1</p>
+      </div>
+      <div class="detail-item">
+        <h4>Grid Size</h4>
+        <p id="statGrid">3 × 2</p>
+      </div>
+      <div class="detail-item">
+        <h4>Swarm Devices</h4>
+        <p id="statCount">1</p>
+      </div>
+    </div>
+
+    <button class="fullscreen-prompt-btn" id="startTouchBtn">
+      <span>✨ Tap to Enable Sound & Fullscreen</span>
+    </button>
+  </div>
+
+  <!-- Position Picker Modal (Swarm Mode) -->
+  <div class="pos-modal" id="posModal">
+    <div class="pos-card">
+      <h3 style="margin-bottom: 8px;">Select Your Tile</h3>
+      <p style="font-size: 13px; color: #888;">Pick where your phone is located in the billboard grid:</p>
+      <div class="pos-grid" id="posGridContainer"></div>
+      <button class="fullscreen-prompt-btn" style="width: 100%; justify-content: center;" onclick="closePosPicker()">Done</button>
+    </div>
+  </div>
+
+  <script>
+    // ─── Extract Room Code & Server ───
+    const pathParts = window.location.pathname.split('/');
+    const roomCode = (pathParts[pathParts.length - 1] || 'DEMO').toUpperCase();
+    document.getElementById('roomCodeText').textContent = roomCode;
+
+    // Deep link href
+    const appUrl = `digitalsignboard:///join?code=${roomCode}&server=${encodeURIComponent(window.location.origin)}`;
+    document.getElementById('openInAppBtn').href = appUrl;
+
+    // State Variables
+    let currentMode = 'display-control';
+    let currentState = {
+      text: 'PARTY LED',
+      bgColor: '#000000',
+      textColor: '#ffffff',
+      textSize: 70,
+      speed: 150,
+      isPlaying: false,
+      mode: 'display-control'
+    };
+    let myPosition = 0;
+    let gridCols = 3;
+    let gridRows = 2;
+    let deviceCount = 1;
+
+    let animFrame = null;
+    let scrollX = 0;
+    let lastTime = performance.now();
+
+    // DOM Elements
+    const statusDot = document.getElementById('statusDot');
+    const waitingScreen = document.getElementById('waitingScreen');
+    const waitingTitle = document.getElementById('waitingTitle');
+    const waitingSub = document.getElementById('waitingSub');
+    const viewport = document.getElementById('viewport');
+    const marqueeTrack = document.getElementById('marqueeTrack');
+    const marqueeText = document.getElementById('marqueeText');
+    const swarmContainer = document.getElementById('swarmContainer');
+    const swarmCanvas = document.getElementById('swarmCanvas');
+    const swarmText = document.getElementById('swarmText');
+    const swarmStats = document.getElementById('swarmStats');
+    const statTile = document.getElementById('statTile');
+    const statGrid = document.getElementById('statGrid');
+    const statCount = document.getElementById('statCount');
+    const tileBadge = document.getElementById('tileBadge');
+    const topBar = document.getElementById('topBar');
+    const fsToggleBtn = document.getElementById('fsToggleBtn');
+    const startTouchBtn = document.getElementById('startTouchBtn');
+
+    // Hide top bar on inactivity
+    let hideTimer = null;
+    function resetBarTimeout() {
+      topBar.classList.remove('hidden');
+      clearTimeout(hideTimer);
+      if (currentState.isPlaying) {
+        hideTimer = setTimeout(() => topBar.classList.add('hidden'), 3000);
+      }
+    }
+    window.addEventListener('mousemove', resetBarTimeout);
+    window.addEventListener('touchstart', resetBarTimeout);
+
+    // Fullscreen Toggle
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      } else {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    }
+    fsToggleBtn.addEventListener('click', toggleFullScreen);
+    startTouchBtn.addEventListener('click', () => {
+      toggleFullScreen();
+      requestWakeLock();
+    });
+
+    // Screen Wake Lock API
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {}
+    }
+
+    // ─── WebSocket Connection ───
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}`;
+    let socket = null;
+
+    function connect() {
+      statusDot.className = 'live-dot connecting';
+      socket = new WebSocket(wsUrl);
+
+      socket.onopen = () => {
+        statusDot.className = 'live-dot';
+        socket.send(JSON.stringify({ type: 'join_room', roomCode }));
+        requestWakeLock();
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          handleServerMessage(msg);
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      socket.onclose = () => {
+        statusDot.className = 'live-dot disconnected';
+        waitingScreen.classList.remove('hidden');
+        waitingTitle.textContent = 'Disconnected';
+        waitingSub.textContent = 'Reconnecting to host...';
+        setTimeout(connect, 2500);
+      };
+
+      socket.onerror = () => {
+        statusDot.className = 'live-dot disconnected';
+      };
+    }
+
+    function handleServerMessage(msg) {
+      switch (msg.type) {
+        case 'room_joined':
+          currentState = msg.state;
+          currentMode = msg.state.mode || 'display-control';
+          myPosition = msg.position;
+          gridCols = msg.gridCols || 3;
+          gridRows = msg.gridRows || 2;
+          deviceCount = msg.deviceCount || 1;
+          updateView();
+          break;
+
+        case 'state_update':
+          currentState = { ...currentState, ...msg.state };
+          if (msg.state.mode) currentMode = msg.state.mode;
+          updateView();
+          break;
+
+        case 'grid_update':
+          gridCols = msg.cols;
+          gridRows = msg.rows;
+          if (msg.position !== undefined) myPosition = msg.position;
+          updateView();
+          break;
+
+        case 'device_count':
+          deviceCount = msg.deviceCount;
+          updateView();
+          break;
+
+        case 'host_disconnected':
+          waitingScreen.classList.remove('hidden');
+          waitingTitle.textContent = 'Host Ended Session';
+          waitingSub.textContent = 'The creator of this QR code has closed the room.';
+          stopMarquee();
+          break;
+
+        case 'error':
+          waitingTitle.textContent = 'Room Error';
+          waitingSub.textContent = msg.message;
+          break;
+      }
+    }
+
+    // ─── Render & Mode Logic ───
+    function updateView() {
+      // Update basic colors & text
+      document.body.style.backgroundColor = currentState.bgColor;
+      viewport.style.backgroundColor = currentState.bgColor;
+      marqueeText.style.color = currentState.textColor;
+      marqueeText.textContent = `${currentState.text} • ${currentState.text} • `;
+      marqueeText.style.fontSize = `${currentState.textSize}px`;
+
+      // Mode Switch
+      if (currentMode === 'swarm-billboard') {
+        viewport.style.display = 'none';
+        swarmContainer.style.display = 'flex';
+        swarmStats.style.display = 'flex';
+        swarmContainer.style.backgroundColor = currentState.bgColor;
+        swarmText.style.color = currentState.textColor;
+        swarmText.textContent = currentState.text;
+
+        const tileNum = myPosition + 1;
+        const totalTiles = gridCols * gridRows;
+        tileBadge.textContent = `${tileNum} of ${totalTiles}`;
+        statTile.textContent = `Tile #${tileNum} (C${(myPosition % gridCols) + 1}, R${Math.floor(myPosition / gridCols) + 1})`;
+        statGrid.textContent = `${gridCols} Cols × ${gridRows} Rows`;
+        statCount.textContent = `${deviceCount} connected`;
+
+        renderSwarmTile();
+      } else {
+        viewport.style.display = 'flex';
+        swarmContainer.style.display = 'none';
+        swarmStats.style.display = 'none';
+      }
+
+      // Play / Pause Waiting Screen
+      if (currentState.isPlaying) {
+        waitingScreen.classList.add('hidden');
+        resetBarTimeout();
+        if (currentMode === 'display-control') {
+          startMarquee();
+        } else {
+          startSwarmAnimation();
+        }
+      } else {
+        waitingScreen.classList.remove('hidden');
+        waitingTitle.textContent = currentMode === 'swarm-billboard' ? 'Swarm Billboard Ready' : 'Display Sync Active';
+        waitingSub.textContent = currentMode === 'swarm-billboard'
+          ? `You are tile ${myPosition + 1} of ${gridCols * gridRows}. Position your phone in the swarm grid!`
+          : 'Waiting for host to hit PLAY...';
+        stopMarquee();
+      }
+    }
+
+    // ─── Mode 1: Marquee Animation ───
+    function startMarquee() {
+      stopMarquee();
+      scrollX = window.innerWidth;
+      lastTime = performance.now();
+
+      function step(now) {
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+
+        const textWidth = marqueeText.offsetWidth || 500;
+        scrollX -= currentState.speed * dt;
+
+        if (scrollX < -textWidth / 2) {
+          scrollX = 0;
+        }
+
+        marqueeTrack.style.transform = `translateX(${scrollX}px)`;
+        animFrame = requestAnimationFrame(step);
+      }
+
+      animFrame = requestAnimationFrame(step);
+    }
+
+    function stopMarquee() {
+      if (animFrame) {
+        cancelAnimationFrame(animFrame);
+        animFrame = null;
+      }
+    }
+
+    // ─── Mode 2: Swarm Billboard Tile Engine ───
+    function renderSwarmTile() {
+      const col = myPosition % gridCols;
+      const row = Math.floor(myPosition / gridCols);
+
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+
+      // Swarm canvas spans the entire multi-device grid!
+      const totalWidth = winW * gridCols;
+      const totalHeight = winH * gridRows;
+
+      swarmCanvas.style.width = `${totalWidth}px`;
+      swarmCanvas.style.height = `${totalHeight}px`;
+
+      // Scale text size proportional to the entire billboard
+      const swarmFontSize = Math.max(120, currentState.textSize * 1.8 * Math.min(gridCols, gridRows));
+      swarmText.style.fontSize = `${swarmFontSize}px`;
+
+      // Offset this phone's view to its assigned tile coordinate
+      const offsetX = -col * winW;
+      const offsetY = -row * winH;
+
+      swarmCanvas.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+    }
+
+    let swarmAnimFrame = null;
+    let swarmX = 0;
+    function startSwarmAnimation() {
+      if (swarmAnimFrame) cancelAnimationFrame(swarmAnimFrame);
+
+      const col = myPosition % gridCols;
+      const row = Math.floor(myPosition / gridCols);
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+      const totalWidth = winW * gridCols;
+
+      swarmX = totalWidth;
+      let lastSwarmTime = performance.now();
+
+      function stepSwarm(now) {
+        const dt = (now - lastSwarmTime) / 1000;
+        lastSwarmTime = now;
+
+        const contentWidth = swarmText.offsetWidth || totalWidth;
+        swarmX -= currentState.speed * dt;
+
+        if (swarmX < -contentWidth) {
+          swarmX = totalWidth;
+        }
+
+        // Combine tile position offset with global scrolling position
+        const tileOffsetX = -col * winW;
+        const tileOffsetY = -row * winH;
+        swarmCanvas.style.transform = `translate(${tileOffsetX + swarmX}px, ${tileOffsetY}px)`;
+
+        swarmAnimFrame = requestAnimationFrame(stepSwarm);
+      }
+
+      swarmAnimFrame = requestAnimationFrame(stepSwarm);
+    }
+
+    // ─── Swarm Position Picker ───
+    function openPosPicker() {
+      const container = document.getElementById('posGridContainer');
+      container.innerHTML = '';
+      container.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
+
+      const totalTiles = gridCols * gridRows;
+      for (let i = 0; i < totalTiles; i++) {
+        const tile = document.createElement('div');
+        tile.className = `pos-tile ${i === myPosition ? 'selected' : ''}`;
+        tile.textContent = `#${i + 1}`;
+        tile.onclick = () => {
+          myPosition = i;
+          renderSwarmTile();
+          updateView();
+          closePosPicker();
+        };
+        container.appendChild(tile);
+      }
+
+      document.getElementById('posModal').classList.add('open');
+    }
+
+    function closePosPicker() {
+      document.getElementById('posModal').classList.remove('open');
+    }
+
+    window.addEventListener('resize', () => {
+      if (currentMode === 'swarm-billboard') {
+        renderSwarmTile();
+      }
+    });
+
+    // Start WebSocket
+    connect();
+  </script>
+</body>
+</html>

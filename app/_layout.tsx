@@ -30,8 +30,31 @@ export default function RootLayout() {
             headerShown: false,
           }} 
         />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="solo" options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="host" 
+          options={{
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="join" 
+          options={{
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="client-display" 
+          options={{
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="swarm-display" 
+          options={{
+            headerShown: false,
+          }} 
+        />
       </Stack>
       <StatusBar style="auto" />
     </>
